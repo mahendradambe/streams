@@ -1,8 +1,7 @@
-import { ActivityType, ObjectType, VerbType } from "./types";
-import { objectIdToInt } from "./utils";
+import { ActivityType, ObjectId, ObjectType, VerbType } from "./types";
 
 export class Activity implements ActivityType {
-    public id: number;
+    public id: ObjectId;
 
     get summary() {
         return `${this.actor.id} ${this.verb.pastTense} ${this.object.id}`;
@@ -15,11 +14,7 @@ export class Activity implements ActivityType {
         public readonly object: ObjectType<Record<string, any>>,
         public readonly target?: ObjectType<Record<string, any>>
     ) {
-        this.id = parseInt(
-            `${this.verb.id}${objectIdToInt(this.actor.id)}${objectIdToInt(
-                this.object.id
-            )}`
-        );
+        this.id = `${time}-${actor.id}-${verb.pastTense}-${object.id}`;
     }
 
     toJson() {

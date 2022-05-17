@@ -10,6 +10,13 @@ export const Create: VerbType = {
 };
 registry.register(Create);
 
+export const Delete: VerbType = {
+    id: 1,
+    infinitive: "delete",
+    pastTense: "deleted",
+};
+registry.register(Create);
+
 export const Like: VerbType = {
     id: 2,
     infinitive: "like",

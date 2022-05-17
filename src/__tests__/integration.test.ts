@@ -1,185 +1,152 @@
-import { describe, expect, it } from "vitest";
-import { Activity } from "../activity";
-import { MemoryFeedManager } from "../memory.manager";
-import { ObjectId } from "../types";
-import { Create, Dislike, Like } from "../verbs";
-
-class UserFeedManager extends MemoryFeedManager {
-    private constructor() {
-        super();
-    }
-
-    getActorFollowers(actorId: ObjectId): ObjectId[] {
-        const user = USERS.concat(POSTS as any).find((u) => u.id === actorId);
-
-        return user ? user.followers : [];
-    }
-
-    static create() {
-        if (this._instance) {
-            return this._instance;
-        }
-
-        this._instance = new UserFeedManager();
-        return this._instance;
-    }
-
-    private static _instance: UserFeedManager;
-}
-
-const manager = UserFeedManager.create();
-
-class Post {
-    id: ObjectId;
-    followers: ObjectId[] = [];
-
-    constructor(public readonly content: string, creator: ObjectId) {
-        this.id = `${content.substring(0, 5)}-${Math.random()
-            .toString(36)
-            .substring(5, 12)}`;
-
-        this.followers.push(creator);
-    }
-
-    like(actor: ObjectId) {
-        this.followers.push(actor);
-
-        manager.add(
-            this.id,
-            new Activity(Date.now(), { id: actor }, Like, { id: this.id })
-        );
-    }
-
-    dislike(actor: ObjectId) {
-        const likeIdx = this.followers.indexOf(actor);
-
-        if (likeIdx >= 0) {
-            this.followers.splice(likeIdx, 1);
-
-            manager.add(
-                this.id,
-                new Activity(Date.now(), { id: actor }, Dislike, {
-                    id: this.id,
-                })
-            );
-        }
-    }
-
-    toJson() {
-        return {
-            id: this.id,
-            content: this.content,
-        };
-    }
-}
-
-const POSTS: Post[] = [];
-
-class User {
-    public posts: ObjectId[] = [];
-    public liked: ObjectId[] = [];
-
-    constructor(public id: ObjectId, public followers: ObjectId[]) {}
-
-    createPost(content: string = "") {
-        const post: Post = new Post(content, this.id);
-
-        this.posts.push(post.id);
-        POSTS.push(post);
-
-        manager.add(
-            this.id,
-            new Activity(Date.now(), this.toJson(), Create, post.toJson())
-        );
-
-        return post;
-    }
-
-    likePost(postId: ObjectId) {
-        const post = POSTS.find((p) => p.id === postId);
-
-        if (post) {
-            this.liked.push(postId);
-            post.like(this.id);
-
-            manager.add(
-                this.id,
-                new Activity(Date.now(), { id: this.id }, Like, {
-                    id: post.id,
-                })
-            );
-        }
-    }
-
-    dislikePost(postId: ObjectId) {
-        const post = POSTS.find((p) => p.id === postId);
-
-        if (post) {
-            const postIdx = this.liked.indexOf(postId);
-            this.liked.splice(postIdx, 1);
-
-            post.dislike(this.id);
-
-            manager.add(
-                this.id,
-                new Activity(Date.now(), this.toJson(), Dislike, post.toJson())
-            );
-        }
-    }
-
-    toJson() {
-        return {
-            id: this.id,
-        };
-    }
-}
-
-const USERS: User[] = [
-    new User("mahendra", ["sameer"]),
-    new User("sameer", ["mahendra"]),
-    new User("swapnil", ["sameer"]),
-];
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+    MemoryActivityStorage,
+    MemoryTimelineStorage,
+} from "../memory.storage";
+import { Api, getSummary, User, UserFeedManager } from "./helpers";
 
 describe("streams", () => {
-    describe("feed manager", () => {
-        describe("when a post is created", () => {
-            it("should fanout", async () => {
-                const mahendra = USERS[0];
-                const sameer = USERS[1];
-                const swapnil = USERS[2];
-                const post = sameer.createPost("hello world");
+    let api: Api;
+    let mahendra: User;
+    let sameer: User;
+    let swapnil: User;
+    let dinesh: User;
 
-                mahendra.likePost(post.id);
-                swapnil.likePost(post.id);
-                mahendra.dislikePost(post.id);
+    let userFeedManager: UserFeedManager;
 
-                const mahendraFeed = manager.getActorFeed(mahendra.id);
-                const sameerFeed = manager.getActorFeed(sameer.id);
-                const swapnilFeed = manager.getActorFeed(swapnil.id);
+    beforeEach(() => {
+        MemoryActivityStorage.create().purge();
+        MemoryTimelineStorage.create().purge();
 
-                const mahendraActivities = mahendraFeed.getMany();
-                const sameerActivities = sameerFeed.getMany();
-                const swapnilActivities = swapnilFeed.getMany();
+        api = new Api();
 
-                console.log(
-                    "mahendra",
-                    mahendraActivities.map((act) => (act as Activity).summary)
-                );
+        mahendra = api.userRepo.create({ id: "mahendra" });
+        sameer = api.userRepo.create({ id: "sameer" });
+        swapnil = api.userRepo.create({ id: "swapnil" });
+        dinesh = api.userRepo.create({ id: "dinesh" });
 
-                console.log(
-                    "sameer",
-                    sameerActivities.map((act) => (act as Activity).summary)
-                );
+        userFeedManager = api.userFeedManager;
+    });
 
-                console.log(
-                    "swapnil",
-                    swapnilActivities.map((act) => (act as Activity).summary)
-                );
+    it("should be defined", () => {
+        expect(api).toBeDefined();
+        expect(api.postRepo).toBeDefined();
+        expect(api.postFeedManager).toBeDefined();
+        expect(api.userRepo).toBeDefined();
+        expect(api.userFeedManager).toBeDefined();
 
-                expect(mahendraActivities.length).toBe(3);
-                expect(sameerActivities.length).toBe(3);
-                expect(swapnilActivities.length).toBe(2);
-            });
+        expect(mahendra).toBeDefined();
+        expect(sameer).toBeDefined();
+        expect(swapnil).toBeDefined();
+        expect(dinesh).toBeDefined();
+    });
+
+    it("should create an activity for follow", () => {
+        api.followUser(sameer.id, swapnil.id);
+
+        const sameerSummary = getSummary(userFeedManager, sameer.id);
+        const swapnilSummary = getSummary(userFeedManager, swapnil.id);
+
+        expect(sameerSummary).toMatchSnapshot();
+        expect(swapnilSummary).toMatchSnapshot();
+    });
+
+    it("should notify followers when post is created", () => {
+        api.followUser(sameer.id, swapnil.id);
+        api.createPost({
+            id: "Post 1",
+            content: "Some Content",
+            creator: swapnil.id,
         });
+
+        const sameerSummary = getSummary(userFeedManager, sameer.id);
+        const swapnilSummary = getSummary(userFeedManager, swapnil.id);
+
+        expect(sameerSummary.feed.length).toBe(2);
+        expect(swapnilSummary.feed.length).toBe(2);
+        expect(sameerSummary).toMatchSnapshot();
+        expect(swapnilSummary).toMatchSnapshot();
+    });
+
+    it("should notify creator when someone likes the post", () => {
+        const post = api.createPost({
+            id: "Post 1",
+            content: "Some Content",
+            creator: swapnil.id,
+        });
+        api.likePost(mahendra.id, post.id);
+
+        const mahendraSummary = getSummary(userFeedManager, mahendra.id);
+        const swapnilSummary = getSummary(userFeedManager, swapnil.id);
+
+        expect(mahendraSummary.feed.length).toBe(1);
+        expect(swapnilSummary.feed.length).toBe(2);
+        expect(mahendraSummary).toMatchSnapshot();
+        expect(swapnilSummary).toMatchSnapshot();
+    });
+
+    it("should notify everyone who likes the post when someone new likes the post", () => {
+        const post = api.createPost({
+            id: "Post 1",
+            content: "Some Content",
+            creator: swapnil.id,
+        });
+        api.likePost(mahendra.id, post.id);
+        api.likePost(sameer.id, post.id);
+
+        const mahendraSummary = getSummary(userFeedManager, mahendra.id);
+        const swapnilSummary = getSummary(userFeedManager, swapnil.id);
+        const sameerSummary = getSummary(userFeedManager, sameer.id);
+
+        expect(mahendraSummary.feed.length).toBe(2);
+        expect(swapnilSummary.feed.length).toBe(3);
+        expect(sameerSummary.feed.length).toBe(1);
+        expect(mahendraSummary).toMatchSnapshot();
+        expect(swapnilSummary).toMatchSnapshot();
+        expect(sameerSummary).toMatchSnapshot();
+    });
+
+    it("should notify when someone dislikes the post", () => {
+        const post = api.createPost({
+            id: "Post 1",
+            content: "Some Content",
+            creator: swapnil.id,
+        });
+        api.likePost(mahendra.id, post.id);
+        api.dislikePost(mahendra.id, post.id);
+
+        const mahendraSummary = getSummary(userFeedManager, mahendra.id);
+        const swapnilSummary = getSummary(userFeedManager, swapnil.id);
+
+        expect(mahendraSummary.feed.length).toBe(2);
+        expect(swapnilSummary.feed.length).toBe(3);
+        expect(mahendraSummary).toMatchSnapshot();
+        expect(swapnilSummary).toMatchSnapshot();
+    });
+
+    it("shouldn't notify about deleting a post", () => {
+        const post = api.createPost({
+            id: "Post 1",
+            content: "Some Content",
+            creator: swapnil.id,
+        });
+        api.likePost(mahendra.id, post.id);
+        api.likePost(sameer.id, post.id);
+        api.dislikePost(dinesh.id, post.id);
+        api.deletePost(post.id, dinesh.id);
+
+        const mahendraSummary = getSummary(userFeedManager, mahendra.id);
+        const swapnilSummary = getSummary(userFeedManager, swapnil.id);
+        const sameerSummary = getSummary(userFeedManager, sameer.id);
+        const dineshSummary = getSummary(userFeedManager, dinesh.id);
+
+        expect(mahendraSummary.feed.length).toBe(3);
+        expect(swapnilSummary.feed.length).toBe(4);
+        expect(sameerSummary.feed.length).toBe(1);
+        expect(dineshSummary.feed.length).toBe(2);
+        expect(mahendraSummary).toMatchSnapshot();
+        expect(swapnilSummary).toMatchSnapshot();
+        expect(sameerSummary).toMatchSnapshot();
+        expect(dineshSummary).toMatchSnapshot();
     });
 });

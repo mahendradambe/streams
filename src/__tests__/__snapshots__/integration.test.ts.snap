@@ -1,0 +1,151 @@
+// Vitest Snapshot v1
+
+exports[`streams > should create an activity for follow 1`] = `
+{
+  "actorId": "sameer",
+  "feed": [
+    "sameer followed swapnil",
+  ],
+}
+`;
+
+exports[`streams > should create an activity for follow 2`] = `
+{
+  "actorId": "swapnil",
+  "feed": [
+    "sameer followed swapnil",
+  ],
+}
+`;
+
+exports[`streams > should notify creator when someone likes the post 1`] = `
+{
+  "actorId": "mahendra",
+  "feed": [
+    "mahendra liked Post 1",
+  ],
+}
+`;
+
+exports[`streams > should notify creator when someone likes the post 2`] = `
+{
+  "actorId": "swapnil",
+  "feed": [
+    "swapnil created Post 1",
+    "mahendra liked Post 1",
+  ],
+}
+`;
+
+exports[`streams > should notify everyone who likes the post when someone new likes the post 1`] = `
+{
+  "actorId": "mahendra",
+  "feed": [
+    "mahendra liked Post 1",
+    "sameer liked Post 1",
+  ],
+}
+`;
+
+exports[`streams > should notify everyone who likes the post when someone new likes the post 2`] = `
+{
+  "actorId": "swapnil",
+  "feed": [
+    "swapnil created Post 1",
+    "mahendra liked Post 1",
+    "sameer liked Post 1",
+  ],
+}
+`;
+
+exports[`streams > should notify everyone who likes the post when someone new likes the post 3`] = `
+{
+  "actorId": "sameer",
+  "feed": [
+    "sameer liked Post 1",
+  ],
+}
+`;
+
+exports[`streams > should notify followers when post is created 1`] = `
+{
+  "actorId": "sameer",
+  "feed": [
+    "sameer followed swapnil",
+    "swapnil created Post 1",
+  ],
+}
+`;
+
+exports[`streams > should notify followers when post is created 2`] = `
+{
+  "actorId": "swapnil",
+  "feed": [
+    "sameer followed swapnil",
+    "swapnil created Post 1",
+  ],
+}
+`;
+
+exports[`streams > should notify when someone dislikes the post 1`] = `
+{
+  "actorId": "mahendra",
+  "feed": [
+    "mahendra liked Post 1",
+    "mahendra disliked Post 1",
+  ],
+}
+`;
+
+exports[`streams > should notify when someone dislikes the post 2`] = `
+{
+  "actorId": "swapnil",
+  "feed": [
+    "swapnil created Post 1",
+    "mahendra liked Post 1",
+    "mahendra disliked Post 1",
+  ],
+}
+`;
+
+exports[`streams > shouldn't notify about deleting a post 1`] = `
+{
+  "actorId": "mahendra",
+  "feed": [
+    "mahendra liked Post 1",
+    "sameer liked Post 1",
+    "dinesh disliked Post 1",
+  ],
+}
+`;
+
+exports[`streams > shouldn't notify about deleting a post 2`] = `
+{
+  "actorId": "swapnil",
+  "feed": [
+    "swapnil created Post 1",
+    "mahendra liked Post 1",
+    "sameer liked Post 1",
+    "dinesh disliked Post 1",
+  ],
+}
+`;
+
+exports[`streams > shouldn't notify about deleting a post 3`] = `
+{
+  "actorId": "sameer",
+  "feed": [
+    "sameer liked Post 1",
+  ],
+}
+`;
+
+exports[`streams > shouldn't notify about deleting a post 4`] = `
+{
+  "actorId": "dinesh",
+  "feed": [
+    "dinesh disliked Post 1",
+    "dinesh deleted Post 1",
+  ],
+}
+`;

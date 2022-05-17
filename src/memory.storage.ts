@@ -1,5 +1,4 @@
 import {
-    ActivityId,
     ActivityType,
     ActivityStorageType,
     TimelineStorageType,
@@ -7,11 +6,7 @@ import {
 } from "./types";
 
 export class MemoryActivityStorage implements ActivityStorageType {
-    private _activities = new Map<ActivityId, ActivityType>();
-
-    private constructor() {
-        /** */
-    }
+    private _activities = new Map<ObjectId, ActivityType>();
 
     addMany(activities: ActivityType[]) {
         activities.forEach((activity) => {
@@ -19,7 +14,7 @@ export class MemoryActivityStorage implements ActivityStorageType {
         });
     }
 
-    removeMany(activities: ActivityId[]) {
+    removeMany(activities: ObjectId[]) {
         activities.forEach((activity) => {
             this._activities.delete(activity);
         });
@@ -31,8 +26,12 @@ export class MemoryActivityStorage implements ActivityStorageType {
             .filter(Boolean) as ActivityType[];
     }
 
-    get(id: ActivityId) {
+    get(id: ObjectId) {
         return this._activities.get(id);
+    }
+
+    purge(): void {
+        this._activities.clear();
     }
 
     static create() {
@@ -48,13 +47,13 @@ export class MemoryActivityStorage implements ActivityStorageType {
 }
 
 export class MemoryTimelineStorage implements TimelineStorageType {
-    private _timelines = new Map<ObjectId, Set<ActivityId>>();
+    private _timelines = new Map<ObjectId, Set<ObjectId>>();
 
     private constructor() {
         /** */
     }
 
-    addMany(key: ObjectId, activities: ActivityId[]) {
+    addMany(key: ObjectId, activities: ObjectId[]) {
         const timeline = this._getTimeline(key);
 
         activities.forEach((activity) => {
@@ -62,7 +61,7 @@ export class MemoryTimelineStorage implements TimelineStorageType {
         });
     }
 
-    removeMany(key: ObjectId, activities: ActivityId[]) {
+    removeMany(key: ObjectId, activities: ObjectId[]) {
         const timeline = this._getTimeline(key);
 
         activities.forEach((activity) => {
@@ -76,11 +75,15 @@ export class MemoryTimelineStorage implements TimelineStorageType {
         return Array.from(timeline.values()).slice(offset, offset + count);
     }
 
+    purge(): void {
+        this._timelines.clear();
+    }
+
     private _getTimeline(key: ObjectId) {
         let timeline = this._timelines.get(key);
 
         if (!timeline) {
-            timeline = new Set<ActivityId>();
+            timeline = new Set<ObjectId>();
             this._timelines.set(key, timeline);
         }
 

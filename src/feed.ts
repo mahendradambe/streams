@@ -1,5 +1,4 @@
 import {
-    ActivityId,
     ActivityType,
     FeedType,
     ActivityStorageType,
@@ -18,7 +17,7 @@ export abstract class Feed implements FeedType {
         this.addMany([activity]);
     }
 
-    remove(activity: ActivityId) {
+    remove(activity: ObjectId) {
         this.removeMany([activity]);
     }
 
@@ -27,7 +26,7 @@ export abstract class Feed implements FeedType {
         this.timelineStorage.addMany(this.key, activities.map(selectId));
     }
 
-    removeMany(activities: ActivityId[]) {
+    removeMany(activities: ObjectId[]) {
         this.timelineStorage.removeMany(this.key, activities);
     }
 

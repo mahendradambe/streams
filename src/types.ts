@@ -9,8 +9,6 @@ export type Instance<TConstructible extends Constructible<unknown>> =
 
 export type ObjectId = string | number;
 
-export type ActivityId = number;
-
 export interface VerbType {
     id: number;
     infinitive: string;
@@ -29,34 +27,37 @@ export type ObjectType<
 };
 
 export interface ActivityType {
-    id: ActivityId;
+    id: ObjectId;
     actor: ObjectType;
     verb: VerbType;
     object: ObjectType;
     target?: ObjectType;
     time: number;
+    summary: string;
 }
 
 export interface ActivityStorageType {
     addMany(activities: ActivityType[]): void;
-    removeMany(activities: ActivityId[]): void;
-    getMany(activities: ActivityId[]): ActivityType[];
-    get(id: ActivityId): ActivityType | undefined;
+    removeMany(activities: ObjectId[]): void;
+    getMany(activities: ObjectId[]): ActivityType[];
+    get(id: ObjectId): ActivityType | undefined;
+    purge(): void;
 }
 
 export interface TimelineStorageType {
-    addMany(key: ObjectId, activities: ActivityId[]): void;
-    removeMany(key: ObjectId, activities: ActivityId[]): void;
-    getMany(key: ObjectId, count?: number, offset?: number): ActivityId[];
+    addMany(key: ObjectId, activities: ObjectId[]): void;
+    removeMany(key: ObjectId, activities: ObjectId[]): void;
+    getMany(key: ObjectId, count?: number, offset?: number): ObjectId[];
+    purge(): void;
 }
 
 export interface FeedType {
     key: ObjectId;
     add(activity: ActivityType): void;
-    remove(activity: ActivityId): void;
+    remove(activity: ObjectId): void;
     addMany(activities: ActivityType[]): void;
-    removeMany(activities: ActivityId[]): void;
-    get(id: ActivityId): ActivityType | undefined;
+    removeMany(activities: ObjectId[]): void;
+    get(id: ObjectId): ActivityType | undefined;
     getMany(count?: number, offset?: number): ActivityType[];
     activityStorage: ActivityStorageType;
     timelineStorage: TimelineStorageType;
@@ -66,7 +67,7 @@ export interface FeedManagerType {
     actorFeed: Constructible<FeedType>;
     feedTypes: Constructible<FeedType>[];
     add(actorId: ObjectId, activity: ActivityType): void;
-    remove(actorId: ObjectId, activity: ActivityId): void;
+    remove(actorId: ObjectId, activity: ObjectId): void;
     getActorFeed(actorId: ObjectId): FeedType;
     getActorFeeds(actorId: ObjectId): FeedType[];
     getActorFollowers(actorId: ObjectId): ObjectId[];
