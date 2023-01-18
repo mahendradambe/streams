@@ -20,7 +20,7 @@ export class MemoryActivityStorage implements ActivityStorageType {
         });
     }
 
-    getMany(activities: number[]) {
+    getMany(activities: ObjectId[]) {
         return activities
             .map((activity) => this._activities.get(activity))
             .filter(Boolean) as ActivityType[];
